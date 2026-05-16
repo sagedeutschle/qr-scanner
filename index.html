@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Scanner</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101418;
+      color: #f5f7f8;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header, footer {
+      padding: 16px;
+      background: #161c22;
+      border-color: #2b343d;
+    }
+
+    header {
+      border-bottom: 1px solid #2b343d;
+      display: grid;
+      gap: 12px;
+    }
+
+    footer {
+      border-top: 1px solid #2b343d;
+      display: grid;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    main {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .stage {
+      width: min(920px, 100%);
+      display: grid;
+      gap: 14px;
+    }
+
+    .camera {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #34404a;
+      background: #050708;
+      aspect-ratio: 4 / 3;
+    }
+
+    video, canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    .target {
+      position: absolute;
+      inset: 18%;
+      border: 2px solid #68d391;
+      box-shadow: 0 0 0 999px rgb(0 0 0 / 0.28);
+      pointer-events: none;
+    }
+
+    .status {
+      padding: 12px 14px;
+      border: 1px solid #34404a;
+      background: #151b21;
+      min-height: 22px;
+      overflow-wrap: anywhere;
+    }
+
+    .result {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px 12px;
+      border: 1px solid #34404a;
+      border-radius: 6px;
+      background: #0d1115;
+      color: #f5f7f8;
+      font: inherit;
+    }
+
+    button {
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid #4b5965;
+      border-radius: 6px;
+      background: #e7eef4;
+      color: #0d1115;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select {
+      min-height: 42px;
+      max-width: 100%;
+      padding: 0 10px;
+      border: 1px solid #34404a;
+      border-radius: 6px;
+      background: #0d1115;
+      color: #f5f7f8;
+      font: inherit;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>QR Scanner</h1>
+    <div class="controls">
+      <button id="start">Start Camera</button>
+      <select id="cameraSelect" aria-label="Camera">
+        <option value="">Default camera</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="camera">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        <div class="target" aria-hidden="true"></div>
+      </div>
+      <div id="status" class="status">Starting camera...</div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="result">
+      <input id="result" readonly placeholder="Decoded QR text appears here">
+      <button id="copy" disabled>Copy</button>
+    </div>
+  </footer>
+
+  <script src="./jsQR.min.js"></script>
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const copyButton = document.getElementById("copy");
+    const startButton = document.getElementById("start");
+    const cameraSelect = document.getElementById("cameraSelect");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    let detector = null;
+    let lastValue = "";
+    let activeStream = null;
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function setResult(value) {
+      if (!value || value === lastValue) return;
+      lastValue = value;
+      resultEl.value = value;
+      copyButton.disabled = false;
+      setStatus("QR code detected.");
+    }
+
+    async function loadCameras() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter((device) => device.kind === "videoinput");
+        const current = cameraSelect.value;
+        cameraSelect.innerHTML = '<option value="">Default camera</option>';
+        cameras.forEach((camera, index) => {
+          const option = document.createElement("option");
+          option.value = camera.deviceId;
+          option.textContent = camera.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+        cameraSelect.value = current;
+      } catch {
+        // Device labels are only available after permission is granted.
+      }
+    }
+
+    async function start() {
+      try {
+        startButton.disabled = true;
+        setStatus("Requesting camera permission...");
+
+        if ("BarcodeDetector" in window) {
+          const formats = await BarcodeDetector.getSupportedFormats();
+          if (formats.includes("qr_code")) {
+            detector = new BarcodeDetector({ formats: ["qr_code"] });
+          }
+        }
+
+        if (activeStream) {
+          activeStream.getTracks().forEach((track) => track.stop());
+        }
+
+        const deviceId = cameraSelect.value;
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: deviceId ? {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 960 }
+          } : {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 960 }
+          },
+          audio: false
+        });
+
+        activeStream = stream;
+        video.srcObject = stream;
+        await video.play();
+        await loadCameras();
+        setStatus("Point the camera at the QR code.");
+        requestAnimationFrame(scan);
+      } catch (error) {
+        startButton.disabled = false;
+        setStatus(`Camera unavailable: ${error.name}: ${error.message}`);
+      }
+    }
+
+    async function scan() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        try {
+          if (detector) {
+            const codes = await detector.detect(video);
+            if (codes.length) setResult(codes[0].rawValue);
+          } else if (window.jsQR) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) setResult(code.data);
+          }
+        } catch (error) {
+          setStatus(`Scanner error: ${error.message}`);
+        }
+      }
+
+      requestAnimationFrame(scan);
+    }
+
+    copyButton.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(resultEl.value);
+      setStatus("Copied.");
+    });
+
+    startButton.addEventListener("click", start);
+    cameraSelect.addEventListener("change", () => {
+      if (activeStream) start();
+    });
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("This browser does not expose camera access. Try Chrome or Safari on localhost.");
+      startButton.disabled = true;
+    } else {
+      loadCameras();
+      setStatus("Click Start Camera, allow camera access, then point the camera at the QR code.");
+    }
+  </script>
+</body>
+</html>

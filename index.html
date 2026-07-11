@@ -25,6 +25,12 @@
       border-color: #2b343d;
     }
 
+    /* Grid items refuse to shrink below their content by default; without
+       this a camera with a long device name stretches the whole layout. */
+    header, main, footer {
+      min-width: 0;
+    }
+
     header {
       border-bottom: 1px solid #2b343d;
       display: grid;
@@ -130,10 +136,12 @@
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
+      min-width: 0;
     }
 
     select {
       min-height: 42px;
+      min-width: 0;
       max-width: 100%;
       padding: 0 10px;
       border: 1px solid #34404a;

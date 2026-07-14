@@ -32,6 +32,19 @@ python3 -m http.server 8000
 - Picks the camera via a dropdown — handy on machines with multiple cameras.
 - Detected text lands in a copy-friendly input field.
 
+## Also in here: Phone Declutter
+
+[`organize.html`](./organize.html) — a guided checklist for organizing the shiz
+out of your phone: 46 concrete tasks across 11 zones (home screen, apps, photos,
+storage, notifications, inbox, contacts, subscriptions, safety, habits), with
+step-by-step iPhone and Android tips for each. Check things off as you go —
+progress is saved in the browser and never leaves your device.
+
+Live: <https://sagedeutschle.github.io/qr-scanner/organize.html>
+
+Same deal as the scanner: one HTML file, no backend, no build step, works from
+`file://`.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

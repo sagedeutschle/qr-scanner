@@ -348,7 +348,7 @@
       <small>Progress lives in this browser only — nothing leaves your phone.</small>
       <button class="ghost" id="reset">Reset progress</button>
     </div>
-    <small>More tools: <a href="./index.html">QR Scanner</a></small>
+    <small>More tools: <a href="./homescreen.html">Home Screen Planner</a> · <a href="./index.html">QR Scanner</a></small>
   </footer>
 
   <script>
@@ -376,7 +376,8 @@
             ios: "Long-press the wallpaper → tap the page dots → uncheck extra pages. The App Library keeps everything.",
             android: "Move keepers to page one, drag the rest off — the app drawer has them all anyway." },
           { id: "folders", text: "Make 2–4 folders, named by verb: “Watch”, “Pay”, “Go”.",
-            tip: "If a folder wants to be called “Misc”, its contents belong in the drawer, not on your home screen." },
+            tip: "If a folder wants to be called “Misc”, its contents belong in the drawer, not on your home screen.",
+            link: { href: "./homescreen.html", label: "Want the sorting done for you? Home Screen Planner →" } },
           { id: "badges", text: "Kill the red badges on apps that don't deserve them.",
             ios: "Settings → Notifications → the app → turn off Badges.",
             android: "Long-press the app → App info → Notifications → turn off the notification dot." },
@@ -607,6 +608,15 @@
           if (task.tip) body.appendChild(tipLine("both", "", task.tip));
           if (task.ios) body.appendChild(tipLine("ios", "iPhone", task.ios));
           if (task.android) body.appendChild(tipLine("android", "Android", task.android));
+          if (task.link) {
+            const a = document.createElement("a");
+            a.className = "tip";
+            a.href = task.link.href;
+            a.textContent = task.link.label;
+            a.style.color = "var(--accent)";
+            a.addEventListener("click", (e) => e.stopPropagation());
+            body.appendChild(a);
+          }
 
           label.append(box, body);
           tasks.appendChild(label);

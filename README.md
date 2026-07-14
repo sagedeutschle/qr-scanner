@@ -32,18 +32,32 @@ python3 -m http.server 8000
 - Picks the camera via a dropdown — handy on machines with multiple cameras.
 - Detected text lands in a copy-friendly input field.
 
-## Also in here: Phone Declutter
+## Also in here: phone organization tools
+
+Same deal as the scanner — each is one HTML file, no backend, no build step,
+works from `file://`. All progress/plans save in the browser and never leave
+your device.
+
+### Phone Declutter
 
 [`organize.html`](./organize.html) — a guided checklist for organizing the shiz
 out of your phone: 46 concrete tasks across 11 zones (home screen, apps, photos,
 storage, notifications, inbox, contacts, subscriptions, safety, habits), with
-step-by-step iPhone and Android tips for each. Check things off as you go —
-progress is saved in the browser and never leaves your device.
+step-by-step iPhone and Android tips for each.
 
 Live: <https://sagedeutschle.github.io/qr-scanner/organize.html>
 
-Same deal as the scanner: one HTML file, no backend, no build step, works from
-`file://`.
+### Home Screen Planner
+
+[`homescreen.html`](./homescreen.html) — rearranges your apps into folders where
+they belong and pretties it up. Tap in your apps (300+ app catalog with smart
+categorization), it sorts them into verb-named folders (🎬 Watch, 💸 Pay, 🗺️ Go…)
+on a live phone mockup with wallpaper themes, a dock, and a widget row. Tweak
+anything by tapping, then follow the generated checklist to make your real
+phone match — iOS/Android don't let outside software move icons, so the last
+step is yours.
+
+Live: <https://sagedeutschle.github.io/qr-scanner/homescreen.html>
 
 ## License
 

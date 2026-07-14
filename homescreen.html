@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Screen Planner</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%B1%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101418;
+      color: #f5f7f8;
+      --panel: #161c22;
+      --panel-2: #151b21;
+      --border: #2b343d;
+      --border-2: #34404a;
+      --muted: #9aa7b1;
+      --accent: #68d391;
+      --track: #232c34;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header, footer {
+      padding: 16px;
+      background: var(--panel);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: 6px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .tagline, .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .hint { font-size: 13px; }
+
+    main {
+      display: grid;
+      justify-items: center;
+      padding: 16px;
+    }
+
+    .stage {
+      width: min(720px, 100%);
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .card {
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: var(--panel-2);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card-head {
+      display: grid;
+      gap: 4px;
+    }
+
+    .step-tag {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input[type="search"], textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px 12px;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: #0d1115;
+      color: #f5f7f8;
+      font: inherit;
+    }
+
+    textarea { min-height: 84px; resize: vertical; }
+
+    button {
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid #4b5965;
+      border-radius: 6px;
+      background: #e7eef4;
+      color: #0d1115;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button.ghost {
+      min-height: 36px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--border-2);
+      border-radius: 17px;
+      background: #0d1115;
+      color: #f5f7f8;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip .cat { color: var(--muted); font-size: 12px; }
+    .chip.suggest { border-style: dashed; color: var(--muted); }
+    .chip.unsorted { border-color: #b7791f; }
+
+    .counter {
+      font-size: 13px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row.split { justify-content: space-between; }
+
+    /* ── phone mockup ─────────────────────────────────────────── */
+    .preview {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+    }
+
+    .phone {
+      width: 296px;
+      height: 610px;
+      border-radius: 40px;
+      border: 6px solid #05070a;
+      outline: 1px solid var(--border-2);
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      box-shadow: 0 18px 50px rgb(0 0 0 / 0.5);
+    }
+
+    .wp-dusk    { background: linear-gradient(160deg, #2b2d5e 0%, #7048a8 55%, #d96aa7 100%); }
+    .wp-forest  { background: linear-gradient(160deg, #0b2e26 0%, #14554a 55%, #2f8f6f 100%); }
+    .wp-ocean   { background: linear-gradient(160deg, #0a2540 0%, #155e94 55%, #3ba7c4 100%); }
+    .wp-peach   { background: linear-gradient(160deg, #5c2a4d 0%, #b5536b 55%, #f2a65a 100%); }
+    .wp-mono    { background: linear-gradient(160deg, #17191d 0%, #23262c 55%, #3a3f47 100%); }
+
+    .statusbar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 18px 4px;
+      font-size: 12px;
+      font-weight: 650;
+      color: #fff;
+      text-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+    }
+
+    .screen {
+      overflow-y: auto;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 6px;
+      align-content: start;
+    }
+
+    .widget {
+      grid-column: 1 / -1;
+      border-radius: 18px;
+      background: rgb(255 255 255 / 0.16);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 12px 14px;
+      color: #fff;
+      text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+      display: grid;
+      gap: 2px;
+    }
+
+    .widget b { font-size: 20px; }
+    .widget span { font-size: 12px; opacity: 0.9; }
+
+    .cell {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      font: inherit;
+      min-height: 0;
+    }
+
+    .icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 650;
+      text-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+    }
+
+    .icon.folder {
+      background: rgb(255 255 255 / 0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 3px;
+      padding: 6px;
+      box-sizing: border-box;
+      place-items: stretch;
+    }
+
+    .icon.folder i {
+      border-radius: 4px;
+      display: block;
+    }
+
+    .cell figcaption, .cell .cap {
+      font-size: 10px;
+      color: #fff;
+      text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+      max-width: 62px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 0;
+    }
+
+    .dots i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgb(255 255 255 / 0.9);
+    }
+
+    .dots i + i { background: rgb(255 255 255 / 0.35); }
+
+    .dock {
+      margin: 0 8px 10px;
+      border-radius: 24px;
+      background: rgb(255 255 255 / 0.18);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      justify-items: center;
+    }
+
+    .dock .cell { gap: 0; }
+
+    .wallpapers {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .wallpapers button {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .wallpapers button[aria-pressed="true"] {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px #101418, 0 0 0 4px var(--accent);
+    }
+
+    label.toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    label.toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    /* ── checklist ────────────────────────────────────────────── */
+    .task {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+    }
+
+    .task input {
+      width: 22px;
+      height: 22px;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .task-body { display: grid; gap: 5px; min-width: 0; }
+    .task-text { font-size: 15px; line-height: 1.4; }
+
+    .task input:checked ~ .task-body .task-text {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-color: #4b5965;
+    }
+
+    .tip {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .tip b { font-weight: 650; color: #c3ced6; }
+
+    /* ── dialog ───────────────────────────────────────────────── */
+    dialog {
+      border: 1px solid var(--border-2);
+      border-radius: 10px;
+      background: var(--panel);
+      color: #f5f7f8;
+      padding: 16px;
+      width: min(420px, calc(100vw - 40px));
+      max-height: 80vh;
+    }
+
+    dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+
+    dialog .options {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+      max-height: 52vh;
+      overflow-y: auto;
+    }
+
+    dialog .options button {
+      justify-content: flex-start;
+      text-align: left;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #0d1115;
+      color: #f5f7f8;
+      border: 1px solid var(--border-2);
+      font-weight: 500;
+    }
+
+    dialog .options button.current { border-color: var(--accent); }
+    dialog .options button.danger { color: #fca5a5; }
+
+    footer small { color: var(--muted); }
+    footer a { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      .phone { width: 272px; height: 566px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Home Screen Planner</h1>
+    <p class="tagline">Tell it what's on your phone → it sorts everything into folders where they belong and mocks up the pretty result → you copy it onto the real thing with a checklist.</p>
+  </header>
+
+  <main>
+    <section class="stage">
+
+      <div class="card" id="apps-card">
+        <div class="card-head">
+          <span class="step-tag">Step 1</span>
+          <h2>What's on your phone?</h2>
+          <p class="hint">Search and tap to add. Don't aim for complete — the 30–50 apps you actually keep is plenty.</p>
+        </div>
+        <input type="search" id="search" placeholder="Type an app name… (Netflix, Venmo, Procreate…)" autocomplete="off">
+        <div class="chips" id="suggestions"></div>
+        <div class="row">
+          <button class="ghost" id="usual">+ Add the usual suspects</button>
+          <button class="ghost" id="paste-toggle">Paste a list instead</button>
+        </div>
+        <div id="paste-area" hidden>
+          <textarea id="paste" placeholder="One app per line (or comma-separated)"></textarea>
+          <div class="row" style="margin-top:8px"><button id="paste-add">Add them all</button></div>
+        </div>
+        <div class="row split">
+          <span class="counter" id="app-count">0 apps</span>
+          <button class="ghost" id="clear-apps" hidden>Remove all</button>
+        </div>
+        <div class="chips" id="app-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="step-tag">Step 2</span>
+          <h2>The pretty part</h2>
+          <p class="hint">Everything below updates live. Tap any icon to move it to a different folder, tap a folder to peek inside or rename it, tap a dock slot to swap it. Folders only form when 2+ apps belong together — loners keep their own spot.</p>
+        </div>
+        <div class="preview">
+          <div class="phone wp-dusk" id="phone">
+            <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+            <div class="screen" id="screen"></div>
+            <div class="dots" id="dots"><i></i></div>
+            <div class="dock" id="dock"></div>
+          </div>
+          <div class="wallpapers" id="wallpapers" role="group" aria-label="Wallpaper">
+            <button class="wp-dusk" data-wp="dusk" aria-pressed="true" aria-label="Dusk wallpaper"></button>
+            <button class="wp-forest" data-wp="forest" aria-pressed="false" aria-label="Forest wallpaper"></button>
+            <button class="wp-ocean" data-wp="ocean" aria-pressed="false" aria-label="Ocean wallpaper"></button>
+            <button class="wp-peach" data-wp="peach" aria-pressed="false" aria-label="Peach wallpaper"></button>
+            <button class="wp-mono" data-wp="mono" aria-pressed="false" aria-label="Mono wallpaper"></button>
+          </div>
+          <label class="toggle"><input type="checkbox" id="widget-toggle" checked> Widget row up top (date + weather)</label>
+          <p class="hint" id="page-note"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="step-tag">Step 3</span>
+          <h2>Now make your phone match</h2>
+          <p class="hint">The dragging is the one part nothing can do for you — iPhones and Androids don't let any outside software rearrange the home screen. So here's your plan as a check-off list. Copy it, prop this page open, go.</p>
+        </div>
+        <div class="row">
+          <button id="copy-plan">Copy the plan as text</button>
+          <span class="counter" id="copy-done" hidden>Copied ✓</span>
+        </div>
+        <div id="checklist"></div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer>
+    <div class="row split">
+      <small>Everything is saved in this browser only — nothing leaves your device.</small>
+      <button class="ghost" id="reset">Reset planner</button>
+    </div>
+    <small>More tools: <a href="./organize.html">Phone Declutter</a> · <a href="./index.html">QR Scanner</a></small>
+  </footer>
+
+  <dialog id="dialog"></dialog>
+
+  <script>
+    // ── folder taxonomy ──────────────────────────────────────────
+    const CATS = [
+      { id: "create",  emoji: "🎨", label: "Create" },
+      { id: "watch",   emoji: "🎬", label: "Watch" },
+      { id: "listen",  emoji: "🎧", label: "Listen" },
+      { id: "chat",    emoji: "💬", label: "Chat" },
+      { id: "scroll",  emoji: "🫧", label: "Scroll" },
+      { id: "go",      emoji: "🗺️", label: "Go" },
+      { id: "eat",     emoji: "🍔", label: "Eat" },
+      { id: "shop",    emoji: "🛍️", label: "Shop" },
+      { id: "pay",     emoji: "💸", label: "Pay" },
+      { id: "health",  emoji: "💪", label: "Health" },
+      { id: "play",    emoji: "🎮", label: "Play" },
+      { id: "think",   emoji: "🧠", label: "Think" },
+      { id: "work",    emoji: "💼", label: "Work" },
+      { id: "tools",   emoji: "🛠️", label: "Tools" },
+      { id: "home",    emoji: "🏡", label: "Home" },
+      { id: "system",  emoji: "⚙️", label: "System" },
+    ];
+    const CAT_BY_ID = Object.fromEntries(CATS.map((c) => [c.id, c]));
+
+    const CATALOG = {
+      create: ["Camera", "Photos", "Lightroom", "VSCO", "Snapseed", "Picsart", "Canva", "Procreate Pocket", "Sketchbook", "ibis Paint", "Concepts", "CapCut", "InShot", "iMovie", "GarageBand", "Figma", "Photoshop Express", "Halide", "Darkroom", "Pixlr"],
+      watch: ["YouTube", "Netflix", "Hulu", "Disney+", "Max", "Prime Video", "Apple TV", "Peacock", "Paramount+", "Twitch", "Plex", "Crunchyroll", "Tubi", "Sling TV", "YouTube TV", "Vimeo", "Dropout", "Mubi", "ESPN", "NBA", "MLB"],
+      listen: ["Spotify", "Music", "Podcasts", "Overcast", "Pocket Casts", "Audible", "SoundCloud", "Pandora", "TIDAL", "iHeartRadio", "YouTube Music", "Amazon Music", "Shazam", "Bandcamp", "Sonos"],
+      chat: ["Messages", "WhatsApp", "Telegram", "Signal", "Messenger", "Discord", "Snapchat", "WeChat", "LINE", "GroupMe", "Viber", "Marco Polo", "FaceTime"],
+      scroll: ["Instagram", "TikTok", "X", "Reddit", "Facebook", "Threads", "Bluesky", "Pinterest", "Tumblr", "Mastodon", "BeReal", "Lemon8"],
+      go: ["Maps", "Google Maps", "Waze", "Uber", "Lyft", "Transit", "Citymapper", "Airbnb", "Vrbo", "Booking.com", "Expedia", "Kayak", "Hopper", "Delta", "United", "American Airlines", "Southwest", "JetBlue", "Alaska Airlines", "Amtrak", "Lime", "Turo", "Flighty", "GasBuddy", "ChargePoint", "SpotHero", "ParkMobile"],
+      eat: ["DoorDash", "Uber Eats", "Grubhub", "Instacart", "Starbucks", "McDonald's", "Chick-fil-A", "Dunkin'", "Chipotle", "Domino's", "Taco Bell", "Wendy's", "Panera", "Sweetgreen", "OpenTable", "Resy", "Yelp", "NYT Cooking", "AllRecipes", "Paprika", "HelloFresh", "Too Good To Go"],
+      shop: ["Amazon", "Target", "Walmart", "Costco", "eBay", "Etsy", "Best Buy", "Home Depot", "Lowe's", "IKEA", "Wayfair", "Shein", "Temu", "AliExpress", "Poshmark", "Depop", "Mercari", "OfferUp", "StockX", "Nike", "Sephora", "Ulta"],
+      pay: ["Wallet", "Venmo", "PayPal", "Cash App", "Zelle", "Chase", "Bank of America", "Wells Fargo", "Citi Mobile", "Capital One", "Ally", "Chime", "SoFi", "USAA", "Fidelity", "Schwab", "Robinhood", "Coinbase", "YNAB", "Rocket Money", "Credit Karma", "Splitwise"],
+      health: ["Health", "Fitness", "Strava", "Nike Run Club", "Peloton", "AllTrails", "MyFitnessPal", "Lose It!", "Calm", "Headspace", "Balance", "Oura", "WHOOP", "Garmin Connect", "Fitbit", "Flo", "Clue", "Zocdoc", "MyChart", "CVS", "Walgreens", "GoodRx", "Sleep Cycle"],
+      play: ["NYT Games", "Candy Crush", "Roblox", "Minecraft", "Among Us", "Clash Royale", "Clash of Clans", "Pokémon GO", "Genshin Impact", "Monument Valley", "Stardew Valley", "Balatro", "Chess.com", "GamePigeon", "Steam", "Xbox", "PS App"],
+      think: ["Notes", "Reminders", "Notion", "Obsidian", "Evernote", "Bear", "Day One", "Goodnotes", "Todoist", "Things", "TickTick", "Kindle", "Libby", "Goodreads", "Pocket", "Instapaper", "Duolingo", "Anki", "Khan Academy", "ChatGPT", "Claude", "Gemini", "Perplexity", "News", "New York Times", "Washington Post", "BBC News", "The Athletic"],
+      work: ["Mail", "Gmail", "Outlook", "Calendar", "Google Calendar", "Slack", "Teams", "Zoom", "Google Meet", "Drive", "Google Docs", "Google Sheets", "Dropbox", "OneDrive", "Asana", "Trello", "Jira", "Linear", "Salesforce", "QuickBooks", "DocuSign", "Calendly", "LinkedIn", "Indeed", "GitHub", "Shopify", "Square", "Etsy Seller"],
+      tools: ["Calculator", "Clock", "Files", "Weather", "Translate", "Voice Memos", "Measure", "Compass", "Shortcuts", "Find My", "1Password", "Bitwarden", "LastPass", "Google Authenticator", "Microsoft Authenticator", "NordVPN", "Proton VPN", "Speedtest", "Adobe Scan", "My Verizon", "T-Mobile", "myAT&T", "Xfinity"],
+      home: ["Home", "Google Home", "Alexa", "Ring", "Nest", "Wyze", "ecobee", "Hue", "SmartThings", "Tesla", "Rivian", "myQ", "iRobot", "Blink", "Rachio", "August"],
+      system: ["Settings", "App Store", "Play Store", "Phone", "Safari", "Chrome", "Contacts", "Watch", "Tips", "Freeform", "Stocks", "Magnifier"],
+    };
+
+    // Keyword fallback for apps the catalog doesn't know. First hit wins.
+    const KEYWORDS = [
+      ["pay",    ["bank", "credit", "pay", "cash", "invest", "crypto", "budget", "loan", "tax"]],
+      ["play",   ["game", "puzzle", "arcade", "chess", "poker"]],
+      ["health", ["fit", "run", "gym", "yoga", "workout", "health", "sleep", "meditat", "pharma", "doctor"]],
+      ["go",     ["map", "ride", "park", "flight", "airline", "travel", "hotel", "transit", "train", "scooter", "navigation"]],
+      ["eat",    ["food", "pizza", "burger", "coffee", "sushi", "taco", "eat", "kitchen", "recipe", "restaurant", "grocer"]],
+      ["listen", ["music", "radio", "podcast", "audio", "song"]],
+      ["watch",  ["tv", "video", "stream", "movie", "film", "cinema"]],
+      ["create", ["photo", "cam", "draw", "paint", "art", "design", "sketch", "edit"]],
+      ["work",   ["mail", "calendar", "office", "meet", "team", "work", "invoice", "sign"]],
+      ["think",  ["note", "task", "todo", "read", "book", "news", "learn", "study", "journal", "ai"]],
+      ["shop",   ["shop", "store", "market", "thrift", "buy"]],
+      ["chat",   ["chat", "message", "text", "call"]],
+      ["scroll", ["social", "feed"]],
+      ["home",   ["light", "thermostat", "smart", "home", "vacuum", "doorbell"]],
+      ["tools",  ["vpn", "password", "auth", "scan", "util", "calc", "remote", "wifi", "file"]],
+    ];
+
+    const CATALOG_INDEX = {};
+    for (const [cat, names] of Object.entries(CATALOG)) {
+      for (const name of names) CATALOG_INDEX[name.toLowerCase()] = { name, cat };
+    }
+
+    const USUAL = ["Camera", "Photos", "Maps", "YouTube", "Netflix", "Spotify", "Podcasts", "Instagram", "TikTok", "Reddit", "WhatsApp", "Messages", "Gmail", "Calendar", "Drive", "Amazon", "Venmo", "Wallet", "Chase", "DoorDash", "Starbucks", "Uber", "Airbnb", "Strava", "Calm", "Kindle", "Notes", "ChatGPT", "Duolingo", "NYT Games", "Weather", "Calculator", "Clock", "Settings", "App Store", "Phone", "Safari"];
+
+    const DOCK_PICKS = ["Phone", "Messages", "Safari", "Chrome", "Camera", "WhatsApp", "Gmail", "Mail", "Spotify", "Maps"];
+
+    const WALLPAPER_TIP = {
+      dusk: "something moody with purples/pinks",
+      forest: "something deep green and calm",
+      ocean: "something blue and airy",
+      peach: "a warm sunset",
+      mono: "something dark and minimal",
+    };
+
+    function categorize(name) {
+      const known = CATALOG_INDEX[name.toLowerCase()];
+      if (known) return known.cat;
+      const n = name.toLowerCase();
+      for (const [cat, words] of KEYWORDS) {
+        if (words.some((w) => n.includes(w))) return cat;
+      }
+      return "unsorted";
+    }
+
+    // ── state ────────────────────────────────────────────────────
+    const STORE_KEY = "homescreen-planner-v1";
+    let state = {
+      apps: {},        // name → category id, "unsorted", or "loose"
+      dock: [],        // up to 4 app names
+      folderNames: {}, // category id → custom "emoji label"
+      wallpaper: "dusk",
+      widget: true,
+      steps: {},       // checklist step id → true
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (saved && typeof saved === "object") state = { ...state, ...saved };
+    } catch { /* fresh start */ }
+
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* no storage */ }
+    }
+
+    // ── derived layout ───────────────────────────────────────────
+    function layout() {
+      const inDock = new Set(state.dock);
+      const byCat = {};
+      const loose = [];
+      const names = Object.keys(state.apps).sort((a, b) => a.localeCompare(b));
+      for (const name of names) {
+        if (inDock.has(name)) continue;
+        const cat = state.apps[name];
+        if (cat === "loose" || cat === "unsorted") { loose.push(name); continue; }
+        (byCat[cat] = byCat[cat] || []).push(name);
+      }
+      const folders = [];
+      for (const cat of CATS) {
+        const members = byCat[cat.id] || [];
+        if (members.length >= 2) folders.push({ cat: cat.id, members });
+        else loose.push(...members);
+      }
+      loose.sort((a, b) => a.localeCompare(b));
+      return { folders, loose };
+    }
+
+    function folderTitle(catId) {
+      if (state.folderNames[catId]) return state.folderNames[catId];
+      const cat = CAT_BY_ID[catId];
+      return `${cat.emoji} ${cat.label}`;
+    }
+
+    // ── tiles ────────────────────────────────────────────────────
+    function hue(name) {
+      let h = 0;
+      for (const ch of name) h = (h * 31 + ch.codePointAt(0)) % 360;
+      return h;
+    }
+
+    function tileColor(name) {
+      return `hsl(${hue(name)} 52% 58%)`;
+    }
+
+    function appTile(name, size) {
+      const icon = document.createElement("span");
+      icon.className = "icon";
+      icon.style.background = `linear-gradient(145deg, hsl(${hue(name)} 58% 64%), hsl(${(hue(name) + 24) % 360} 55% 46%))`;
+      icon.textContent = [...name][0].toUpperCase();
+      if (size) { icon.style.width = icon.style.height = size; }
+      return icon;
+    }
+
+    function cell(labelText, iconEl, onTap, title) {
+      const b = document.createElement("button");
+      b.className = "cell";
+      b.type = "button";
+      if (title) b.title = title;
+      b.appendChild(iconEl);
+      const cap = document.createElement("span");
+      cap.className = "cap";
+      cap.textContent = labelText;
+      b.appendChild(cap);
+      b.addEventListener("click", onTap);
+      return b;
+    }
+
+    // ── rendering ────────────────────────────────────────────────
+    const screen = document.getElementById("screen");
+    const dockEl = document.getElementById("dock");
+    const appList = document.getElementById("app-list");
+    const appCount = document.getElementById("app-count");
+    const clearApps = document.getElementById("clear-apps");
+    const pageNote = document.getElementById("page-note");
+    const checklist = document.getElementById("checklist");
+    const dialog = document.getElementById("dialog");
+
+    function render() {
+      renderAppList();
+      renderPhone();
+      renderChecklist();
+      save();
+    }
+
+    function renderAppList() {
+      const names = Object.keys(state.apps).sort((a, b) => a.localeCompare(b));
+      appCount.textContent = `${names.length} app${names.length === 1 ? "" : "s"}`;
+      clearApps.hidden = names.length === 0;
+      appList.replaceChildren();
+      for (const name of names) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        const cat = state.apps[name];
+        chip.className = "chip" + (cat === "unsorted" ? " unsorted" : "");
+        const catLabel = cat === "unsorted" ? "❓ tap to place" : cat === "loose" ? "⭐ loose" : folderTitle(cat);
+        chip.innerHTML = "";
+        chip.append(name, Object.assign(document.createElement("span"), { className: "cat", textContent: catLabel }));
+        chip.addEventListener("click", () => openMoveDialog(name));
+        appList.appendChild(chip);
+      }
+    }
+
+    function renderPhone() {
+      const { folders, loose } = layout();
+
+      screen.replaceChildren();
+      if (state.widget) {
+        const w = document.createElement("div");
+        w.className = "widget";
+        const day = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+        w.innerHTML = `<b>${day}</b><span>72° and sunny — go outside later</span>`;
+        screen.appendChild(w);
+      }
+
+      for (const folder of folders) {
+        const icon = document.createElement("span");
+        icon.className = "icon folder";
+        for (const member of folder.members.slice(0, 9)) {
+          const dot = document.createElement("i");
+          dot.style.background = tileColor(member);
+          icon.appendChild(dot);
+        }
+        const title = folderTitle(folder.cat);
+        screen.appendChild(cell(title, icon, () => openFolderDialog(folder.cat), `${title}: ${folder.members.join(", ")}`));
+      }
+
+      for (const name of loose) {
+        screen.appendChild(cell(name, appTile(name), () => openMoveDialog(name)));
+      }
+
+      dockEl.replaceChildren();
+      for (let i = 0; i < 4; i++) {
+        const name = state.dock[i];
+        if (name) {
+          dockEl.appendChild(cell("", appTile(name), () => openDockDialog(i), name));
+        } else {
+          const empty = document.createElement("span");
+          empty.className = "icon";
+          empty.style.background = "rgb(255 255 255 / 0.14)";
+          empty.textContent = "+";
+          dockEl.appendChild(cell("", empty, () => openDockDialog(i), "Pick a dock app"));
+        }
+      }
+
+      const tiles = folders.length + loose.length;
+      const dots = document.getElementById("dots");
+      dots.replaceChildren(document.createElement("i"));
+      if (tiles > 24) dots.appendChild(document.createElement("i"));
+      pageNote.textContent =
+        tiles === 0 ? "Add some apps above and watch this fill in." :
+        tiles <= 24 ? `${tiles} spots used — fits on one page. Chef's kiss.` :
+        `${tiles} spots — that spills onto page 2. Move more loners into folders or cut apps.`;
+    }
+
+    // ── dialogs ──────────────────────────────────────────────────
+    function showDialog(title, buildOptions) {
+      dialog.replaceChildren();
+      const h = document.createElement("h2");
+      h.textContent = title;
+      const options = document.createElement("div");
+      options.className = "options";
+      buildOptions(options);
+      const close = document.createElement("button");
+      close.className = "ghost";
+      close.style.marginTop = "12px";
+      close.textContent = "Close";
+      close.addEventListener("click", () => dialog.close());
+      dialog.append(h, options, close);
+      dialog.showModal();
+    }
+
+    function option(options, label, onPick, cls = "") {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (cls) b.className = cls;
+      b.textContent = label;
+      b.addEventListener("click", () => { onPick(); dialog.close(); render(); });
+      options.appendChild(b);
+    }
+
+    function openMoveDialog(name) {
+      showDialog(`Where does ${name} belong?`, (options) => {
+        const current = state.apps[name];
+        for (const cat of CATS) {
+          option(options, folderTitle(cat.id), () => { state.apps[name] = cat.id; }, current === cat.id ? "current" : "");
+        }
+        option(options, "⭐ Loose — its own spot on the grid", () => { state.apps[name] = "loose"; }, current === "loose" ? "current" : "");
+        option(options, "🚫 Remove from the plan", () => {
+          delete state.apps[name];
+          state.dock = state.dock.filter((d) => d !== name);
+        }, "danger");
+      });
+    }
+
+    function openFolderDialog(catId) {
+      const { folders } = layout();
+      const folder = folders.find((f) => f.cat === catId);
+      if (!folder) return;
+      showDialog(folderTitle(catId), (options) => {
+        option(options, "✏️ Rename this folder", () => {
+          const next = prompt("Folder name (emoji included):", folderTitle(catId));
+          if (next && next.trim()) state.folderNames[catId] = next.trim();
+        });
+        for (const member of folder.members) {
+          option(options, `${member} → move…`, () => setTimeout(() => openMoveDialog(member), 0));
+        }
+      });
+    }
+
+    function openDockDialog(slot) {
+      const names = Object.keys(state.apps).sort((a, b) => a.localeCompare(b));
+      showDialog("Dock: your 4 daily drivers", (options) => {
+        if (state.dock[slot]) {
+          option(options, "🚫 Empty this slot", () => { state.dock.splice(slot, 1); }, "danger");
+        }
+        for (const name of names) {
+          if (state.dock.includes(name)) continue;
+          option(options, name, () => { state.dock[slot] = name; state.dock = state.dock.filter(Boolean).slice(0, 4); });
+        }
+      });
+    }
+
+    // ── step 1 interactions ──────────────────────────────────────
+    const search = document.getElementById("search");
+    const suggestions = document.getElementById("suggestions");
+
+    function addApp(rawName) {
+      const name = rawName.trim().replace(/\s+/g, " ");
+      if (!name) return;
+      const known = CATALOG_INDEX[name.toLowerCase()];
+      const display = known ? known.name : name;
+      if (!(display in state.apps)) {
+        state.apps[display] = categorize(display);
+        if (state.dock.length < 4 && DOCK_PICKS.includes(display) && !state.dock.includes(display)) {
+          state.dock.push(display);
+        }
+      }
+      render();
+    }
+
+    function renderSuggestions() {
+      const q = search.value.trim().toLowerCase();
+      suggestions.replaceChildren();
+      if (!q) return;
+      const hits = Object.values(CATALOG_INDEX)
+        .filter(({ name }) => name.toLowerCase().includes(q) && !(name in state.apps))
+        .slice(0, 8);
+      for (const { name, cat } of hits) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip suggest";
+        chip.append(`+ ${name}`, Object.assign(document.createElement("span"), { className: "cat", textContent: folderTitle(cat) }));
+        chip.addEventListener("click", () => { addApp(name); search.value = ""; renderSuggestions(); search.focus(); });
+        suggestions.appendChild(chip);
+      }
+      if (!hits.some(({ name }) => name.toLowerCase() === q)) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip suggest";
+        chip.textContent = `+ Add “${search.value.trim()}”`;
+        chip.addEventListener("click", () => { addApp(search.value); search.value = ""; renderSuggestions(); search.focus(); });
+        suggestions.appendChild(chip);
+      }
+    }
+
+    search.addEventListener("input", renderSuggestions);
+    search.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && search.value.trim()) {
+        addApp(search.value);
+        search.value = "";
+        renderSuggestions();
+      }
+    });
+
+    document.getElementById("usual").addEventListener("click", () => {
+      for (const name of USUAL) if (!(name in state.apps)) state.apps[name] = categorize(name);
+      if (!state.dock.length) state.dock = ["Phone", "Messages", "Safari", "Camera"].filter((n) => n in state.apps);
+      render();
+    });
+
+    const pasteArea = document.getElementById("paste-area");
+    document.getElementById("paste-toggle").addEventListener("click", () => { pasteArea.hidden = !pasteArea.hidden; });
+    document.getElementById("paste-add").addEventListener("click", () => {
+      for (const part of document.getElementById("paste").value.split(/[\n,]+/)) addApp(part);
+      document.getElementById("paste").value = "";
+      pasteArea.hidden = true;
+    });
+
+    clearApps.addEventListener("click", () => {
+      if (!confirm("Remove all apps from the planner?")) return;
+      state.apps = {};
+      state.dock = [];
+      render();
+    });
+
+    // ── wallpaper & widget ───────────────────────────────────────
+    const phone = document.getElementById("phone");
+    const wallpaperButtons = [...document.querySelectorAll("#wallpapers button")];
+
+    function setWallpaper(wp) {
+      state.wallpaper = wp;
+      phone.className = `phone wp-${wp}`;
+      for (const b of wallpaperButtons) b.setAttribute("aria-pressed", String(b.dataset.wp === wp));
+      save();
+      renderChecklist();
+    }
+
+    for (const b of wallpaperButtons) b.addEventListener("click", () => setWallpaper(b.dataset.wp));
+
+    const widgetToggle = document.getElementById("widget-toggle");
+    widgetToggle.addEventListener("change", () => { state.widget = widgetToggle.checked; render(); });
+
+    // ── checklist / plan ─────────────────────────────────────────
+    function planSteps() {
+      const { folders, loose } = layout();
+      const steps = [];
+      steps.push({
+        id: "clean-slate",
+        text: "Clean slate: pull every app off the home screen except what's in this plan.",
+        tip: "iPhone: long-press the wallpaper → tap the minus on apps → Remove from Home Screen (they stay in the App Library). Android: long-press → Remove (stays in the app drawer).",
+      });
+      steps.push({
+        id: "wallpaper",
+        text: `Set the wallpaper — ${WALLPAPER_TIP[state.wallpaper] || "your pick"}.`,
+        tip: "A wallpaper you love is 80% of “pretty”. Photos → your favorites is a great source.",
+      });
+      for (const folder of folders) {
+        const [first, second, ...rest] = folder.members;
+        steps.push({
+          id: `folder-${folder.cat}`,
+          text: `Build the ${folderTitle(folder.cat)} folder (${folder.members.length} apps).`,
+          tip: `Drag ${first} onto ${second} to create it, rename it “${folderTitle(folder.cat)}”${rest.length ? `, then drop in: ${rest.join(", ")}` : ""}.`,
+        });
+      }
+      if (loose.length) {
+        steps.push({
+          id: "loose",
+          text: `Place the loose apps on the grid: ${loose.join(", ")}.`,
+          tip: "These earned their own spot — put the most-used ones within thumb reach (bottom half).",
+        });
+      }
+      if (state.dock.length) {
+        steps.push({
+          id: "dock",
+          text: `Dock, left to right: ${state.dock.join(" · ")}.`,
+          tip: "The dock follows you to every page — these should be your no-thought, every-day taps.",
+        });
+      }
+      if (state.widget) {
+        steps.push({
+          id: "widget",
+          text: "Add the widget row up top (calendar, weather, or photos).",
+          tip: "iPhone: long-press wallpaper → Edit/+ → pick a widget. Android: long-press → Widgets.",
+        });
+      }
+      steps.push({
+        id: "tint",
+        text: "Optional glow-up: matching icon tint.",
+        tip: "iPhone (iOS 18+): long-press wallpaper → Customize → Tinted. Android: Settings → Wallpaper & style → Themed icons.",
+      });
+      steps.push({
+        id: "one-page",
+        text: "Delete the leftover empty pages so it's ONE page.",
+        tip: "iPhone: long-press wallpaper → tap the page dots → uncheck extras. Android: pinch or long-press to manage pages.",
+      });
+      return steps;
+    }
+
+    function renderChecklist() {
+      const steps = planSteps();
+      checklist.replaceChildren();
+      for (const step of steps) {
+        const label = document.createElement("label");
+        label.className = "task";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = Boolean(state.steps[step.id]);
+        box.addEventListener("change", () => {
+          if (box.checked) state.steps[step.id] = true;
+          else delete state.steps[step.id];
+          save();
+        });
+        const body = document.createElement("div");
+        body.className = "task-body";
+        const text = document.createElement("span");
+        text.className = "task-text";
+        text.textContent = step.text;
+        const tip = document.createElement("p");
+        tip.className = "tip";
+        tip.textContent = step.tip;
+        body.append(text, tip);
+        label.append(box, body);
+        checklist.appendChild(label);
+      }
+    }
+
+    function planAsText() {
+      const { folders, loose } = layout();
+      const lines = ["📱 HOME SCREEN PLAN", ""];
+      if (state.dock.length) lines.push(`Dock: ${state.dock.join(" · ")}`, "");
+      for (const folder of folders) lines.push(`${folderTitle(folder.cat)}: ${folder.members.join(", ")}`);
+      if (loose.length) lines.push(`⭐ Loose: ${loose.join(", ")}`);
+      lines.push("", `Wallpaper: ${WALLPAPER_TIP[state.wallpaper] || state.wallpaper}`);
+      if (state.widget) lines.push("Widget row: calendar or weather up top");
+      return lines.join("\n");
+    }
+
+    const copyDone = document.getElementById("copy-done");
+    document.getElementById("copy-plan").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(planAsText());
+        copyDone.hidden = false;
+        setTimeout(() => { copyDone.hidden = true; }, 2000);
+      } catch {
+        prompt("Copy your plan:", planAsText());
+      }
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!confirm("Wipe the whole plan and start over?")) return;
+      state = { apps: {}, dock: [], folderNames: {}, wallpaper: "dusk", widget: true, steps: {} };
+      widgetToggle.checked = true;
+      setWallpaper("dusk");
+      render();
+    });
+
+    // ── boot ─────────────────────────────────────────────────────
+    widgetToggle.checked = state.widget;
+    setWallpaper(state.wallpaper);
+    render();
+  </script>
+</body>
+</html>

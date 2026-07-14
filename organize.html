@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phone Declutter</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B9%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101418;
+      color: #f5f7f8;
+      --panel: #161c22;
+      --panel-2: #151b21;
+      --border: #2b343d;
+      --border-2: #34404a;
+      --muted: #9aa7b1;
+      --accent: #68d391;
+      --track: #232c34;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* Slim overall progress bar pinned to the top of the viewport. */
+    #topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 100%;
+      background: var(--track);
+      z-index: 10;
+    }
+
+    #topbar > div {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    header, footer {
+      padding: 16px;
+      background: var(--panel);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: 12px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    .tagline {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .overall {
+      display: grid;
+      gap: 6px;
+    }
+
+    .overall-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meter {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--track);
+      overflow: hidden;
+    }
+
+    .meter > div {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .platform {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .platform button {
+      min-height: 36px;
+      padding: 0 14px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .platform button + button {
+      border-left: 1px solid var(--border-2);
+    }
+
+    .platform button[aria-pressed="true"] {
+      background: #e7eef4;
+      color: #0d1115;
+    }
+
+    #banner {
+      display: none;
+      padding: 12px 14px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: #14241b;
+      font-weight: 650;
+    }
+
+    body.all-done #banner {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      justify-items: center;
+      padding: 16px;
+    }
+
+    .stage {
+      width: min(720px, 100%);
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .zone {
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: var(--panel-2);
+      overflow: hidden;
+    }
+
+    .zone summary {
+      list-style: none;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .zone summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .zone-emoji {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .zone-name {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .zone-name strong {
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .zone-name .meter {
+      height: 4px;
+    }
+
+    .zone-count {
+      font-size: 13px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .zone.done .zone-count {
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    .tasks {
+      border-top: 1px solid var(--border);
+      display: grid;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .task + .task {
+      border-top: 1px solid var(--border);
+    }
+
+    .task input {
+      width: 22px;
+      height: 22px;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .task-body {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .task-text {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .task input:checked ~ .task-body .task-text {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-color: #4b5965;
+    }
+
+    .tip {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .tip b {
+      font-weight: 650;
+      color: #c3ced6;
+    }
+
+    body.platform-ios .tip-android { display: none; }
+    body.platform-android .tip-ios { display: none; }
+
+    footer .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    footer small {
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--accent);
+    }
+
+    button.ghost {
+      min-height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .confetti {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #topbar > div, .meter > div {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body class="platform-all">
+  <div id="topbar" aria-hidden="true"><div></div></div>
+
+  <header>
+    <div>
+      <h1>Phone Declutter</h1>
+      <p class="tagline">Organize the shiz out of your phone. Check things off as you go — progress is saved on this device.</p>
+    </div>
+    <div class="overall">
+      <div class="overall-label">
+        <span>Overall progress</span>
+        <span id="overallCount">0 / 0</span>
+      </div>
+      <div class="meter" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="overallMeter"><div></div></div>
+    </div>
+    <div class="platform" role="group" aria-label="Show tips for">
+      <button data-platform="all" aria-pressed="true">All tips</button>
+      <button data-platform="ios" aria-pressed="false">iPhone</button>
+      <button data-platform="android" aria-pressed="false">Android</button>
+    </div>
+    <div id="banner">💯 100% organized. Your phone is officially decluttered — go touch grass. 🌱</div>
+  </header>
+
+  <main>
+    <section class="stage" id="stage"></section>
+  </main>
+
+  <footer>
+    <div class="row">
+      <small>Progress lives in this browser only — nothing leaves your phone.</small>
+      <button class="ghost" id="reset">Reset progress</button>
+    </div>
+    <small>More tools: <a href="./homescreen.html">Home Screen Planner</a> · <a href="./index.html">QR Scanner</a></small>
+  </footer>
+
+  <script>
+    const ZONES = [
+      {
+        id: "quick", emoji: "🚑", name: "Quick wins",
+        tasks: [
+          { id: "restart", text: "Restart your phone.",
+            tip: "Clears out weeks of memory gunk. Do it now, read the next step while it boots." },
+          { id: "notifs", text: "Swipe away the entire notification pile.",
+            tip: "All of it. Anything important will come back on its own." },
+          { id: "dead-apps", text: "Delete the 3 apps you already know are dead weight.",
+            tip: "Don't overthink it — you thought of them while reading this." },
+          { id: "tabs", text: "Close all your browser tabs.",
+            ios: "Safari → long-press the tabs button → Close All Tabs.",
+            android: "Chrome → tabs button → ⋮ → Close all tabs." }
+        ]
+      },
+      {
+        id: "home", emoji: "🏠", name: "Home screen",
+        tasks: [
+          { id: "dock", text: "Cut the dock down to the 4 apps you open every day.",
+            tip: "Not the apps you aspire to open. The ones you actually open." },
+          { id: "one-page", text: "Get down to one home screen page (two max).",
+            ios: "Long-press the wallpaper → tap the page dots → uncheck extra pages. The App Library keeps everything.",
+            android: "Move keepers to page one, drag the rest off — the app drawer has them all anyway." },
+          { id: "folders", text: "Make 2–4 folders, named by verb: “Watch”, “Pay”, “Go”.",
+            tip: "If a folder wants to be called “Misc”, its contents belong in the drawer, not on your home screen.",
+            link: { href: "./homescreen.html", label: "Want the sorting done for you? Home Screen Planner →" } },
+          { id: "badges", text: "Kill the red badges on apps that don't deserve them.",
+            ios: "Settings → Notifications → the app → turn off Badges.",
+            android: "Long-press the app → App info → Notifications → turn off the notification dot." },
+          { id: "widgets", text: "Keep only widgets you actually glance at daily.",
+            tip: "Weather and calendar earn their rent. The rest is usually decoration." },
+          { id: "wallpaper", text: "Set a fresh wallpaper.",
+            tip: "Cheap dopamine. Makes the whole cleanup feel real." }
+        ]
+      },
+      {
+        id: "apps", emoji: "📱", name: "Apps",
+        tasks: [
+          { id: "unused", text: "Sort apps by last-used and uninstall anything untouched for 90 days.",
+            ios: "Settings → General → iPhone Storage — each app shows “Last Used”.",
+            android: "Play Store → Manage apps & device → Manage → sort by “Least used”." },
+          { id: "offload", text: "Turn on automatic offloading/archiving of unused apps.",
+            ios: "Settings → Apps → App Store → Offload Unused Apps.",
+            android: "Settings → Apps → the app → “Pause app activity if unused” (or Play Store auto-archive)." },
+          { id: "dupes", text: "Kill the duplicates: one photo editor, one notes app, one to-do list.",
+            tip: "Pick a winner per category. The runner-up goes." },
+          { id: "updates", text: "Update everything once, then turn on auto-updates over Wi-Fi.",
+            tip: "So you never have to think about the little update badge again." }
+        ]
+      },
+      {
+        id: "photos", emoji: "📸", name: "Photos & videos",
+        tasks: [
+          { id: "screenshots", text: "Delete screenshots older than 30 days.",
+            ios: "Photos → Albums → Media Types → Screenshots.",
+            android: "Google Photos → Library → Screenshots (or Files by Google → Images → Screenshots)." },
+          { id: "dupes-photos", text: "Merge duplicates and nuke the blurry burst shots.",
+            ios: "Photos → Albums → Utilities → Duplicates → Merge All.",
+            android: "Files by Google → Clean → duplicate & blurry suggestions." },
+          { id: "trash", text: "Empty the Recently Deleted / Trash album.",
+            tip: "It quietly holds 30 days of “deleted” photos hostage." },
+          { id: "backup", text: "Confirm cloud photo backup is actually on.",
+            ios: "Settings → your name → iCloud → Photos → Sync this iPhone.",
+            android: "Google Photos → your avatar → Photos settings → Backup." },
+          { id: "favorites", text: "Heart your keepers as you scroll instead of trying to delete every dud.",
+            tip: "Curating the good is faster than purging the bad. Do both over time." }
+        ]
+      },
+      {
+        id: "storage", emoji: "💾", name: "Storage",
+        tasks: [
+          { id: "top-offender", text: "Open the storage screen and evict the single biggest offender.",
+            ios: "Settings → General → iPhone Storage — the chart names the culprit.",
+            android: "Settings → Storage — see what's eating the pie." },
+          { id: "downloads", text: "Clear out the Downloads pile.",
+            tip: "Ancient PDFs, memes, and boarding passes from trips you already took." },
+          { id: "offline", text: "Delete forgotten offline stuff: old podcasts, downloaded shows, maps, playlists.",
+            tip: "Podcast apps especially love hoarding hundreds of episodes." },
+          { id: "messages", text: "Set messages to auto-delete after a year.",
+            ios: "Settings → Apps → Messages → Keep Messages → 1 Year.",
+            android: "Messages → your avatar → Messages settings → auto-delete OTPs; delete chunky media threads." }
+        ]
+      },
+      {
+        id: "notifs", emoji: "🔕", name: "Notifications",
+        tasks: [
+          { id: "audit", text: "Only humans (and things with real deadlines) may buzz. Audit app by app.",
+            ios: "Settings → Notifications — work the list top to bottom, be ruthless.",
+            android: "Settings → Notifications → App notifications — same deal." },
+          { id: "batch", text: "Batch the “meh” tier so it arrives on a schedule instead of all day.",
+            ios: "Settings → Notifications → Scheduled Summary.",
+            android: "Long-press a notification → set its channel to Silent." },
+          { id: "sleep-focus", text: "Set a nightly Do Not Disturb / sleep schedule.",
+            tip: "Your phone should clock out when you do." },
+          { id: "email-quiet", text: "Email never buzzes. You check mail when you decide to.",
+            tip: "Turn off mail push notifications entirely. It's liberating." }
+        ]
+      },
+      {
+        id: "inbox", emoji: "💬", name: "Inbox & chats",
+        tasks: [
+          { id: "unsub", text: "Unsubscribe from 10 newsletters.",
+            tip: "Search “unsubscribe” in your mail app and go down the list." },
+          { id: "mute", text: "Mute or leave the group chats you never actually read.",
+            tip: "Muting is polite. Leaving is honest. Either counts." },
+          { id: "pin", text: "Pin the 3–5 conversations that actually matter.",
+            tip: "Partner, family, best friend, the group chat that makes you laugh." },
+          { id: "bankruptcy", text: "Archive every email older than 6 months.",
+            tip: "Declaring inbox bankruptcy is allowed — search still finds everything later." }
+        ]
+      },
+      {
+        id: "contacts", emoji: "👥", name: "Contacts",
+        tasks: [
+          { id: "merge", text: "Merge duplicate contacts.",
+            ios: "Contacts app → the “Duplicates Found” card at the top → Merge All.",
+            android: "Google Contacts → Fix & manage → Merge & fix." },
+          { id: "mystery", text: "Delete the mystery numbers: “Mike Plumber??”, “DO NOT ANSWER”, no-name numbers from 2019.",
+            tip: "If you can't remember who it is, you don't need to reach them." },
+          { id: "photos-names", text: "Give your top 10 people real names and photos.",
+            tip: "Future you, mid-call, will be grateful." },
+          { id: "ice", text: "Set up your emergency info.",
+            ios: "Health app → your avatar → Medical ID → add emergency contacts.",
+            android: "Settings → Safety & emergency → Medical info & emergency contacts." }
+        ]
+      },
+      {
+        id: "money", emoji: "💸", name: "Subscriptions & screen time",
+        tasks: [
+          { id: "sub-list", text: "Read your subscription list top to bottom.",
+            ios: "Settings → your name → Subscriptions.",
+            android: "Play Store → your avatar → Payments & subscriptions → Subscriptions." },
+          { id: "cancel-one", text: "Cancel the one you forgot about.",
+            tip: "There is always one." },
+          { id: "cloud-plan", text: "Check your cloud storage plan still fits after the photo purge.",
+            tip: "Maybe you can drop a tier. Maybe you finally need the bigger one. Either way: decide, don't drift." },
+          { id: "app-limit", text: "Set one screen-time limit on your worst-offender app.",
+            ios: "Settings → Screen Time → App Limits.",
+            android: "Settings → Digital Wellbeing → app timers." }
+        ]
+      },
+      {
+        id: "safety", emoji: "🔒", name: "Safety net",
+        tasks: [
+          { id: "os-update", text: "Install the OS update you've been postponing.",
+            tip: "Yes, the one you've dismissed 11 times. Plug it in tonight." },
+          { id: "location", text: "Audit location access — nothing gets “Always” without a good reason.",
+            ios: "Settings → Privacy & Security → Location Services.",
+            android: "Settings → Location → App location permissions." },
+          { id: "find-my", text: "Confirm Find My / Find My Device is on.",
+            ios: "Settings → your name → Find My → Find My iPhone.",
+            android: "Settings → Security → Find My Device." },
+          { id: "passcode", text: "Use a 6+ digit (or alphanumeric) passcode.",
+            tip: "Four digits was fine in 2012." }
+        ]
+      },
+      {
+        id: "habits", emoji: "🔁", name: "Keep it that way",
+        tasks: [
+          { id: "weekly", text: "Weekly 5-minute sweep: screenshots, downloads, notifications.",
+            tip: "Put a tiny recurring reminder on Sunday evening." },
+          { id: "earn-spot", text: "New app rule: it earns a home-screen spot or it lives in the drawer.",
+            tip: "The home screen is beachfront property now. Act like it." },
+          { id: "monthly", text: "Monthly: uninstall one app and re-justify one subscription.",
+            tip: "Small, boring, and it keeps the shiz permanently organized." }
+        ]
+      }
+    ];
+
+    const STORE_KEY = "phone-declutter-v1";
+    const stage = document.getElementById("stage");
+    const overallCount = document.getElementById("overallCount");
+    const overallMeter = document.getElementById("overallMeter");
+    const topbarFill = document.querySelector("#topbar > div");
+    const resetButton = document.getElementById("reset");
+    const platformButtons = [...document.querySelectorAll(".platform button")];
+    const totalTasks = ZONES.reduce((sum, zone) => sum + zone.tasks.length, 0);
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let state = { done: {}, platform: "all" };
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (saved && typeof saved === "object") {
+        state.done = saved.done && typeof saved.done === "object" ? saved.done : {};
+        if (["all", "ios", "android"].includes(saved.platform)) state.platform = saved.platform;
+      }
+    } catch {
+      // Private mode or corrupted state — start fresh.
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      } catch {
+        // Storage unavailable — the session still works, it just won't persist.
+      }
+    }
+
+    function tipLine(kind, label, text) {
+      const p = document.createElement("p");
+      p.className = `tip tip-${kind}`;
+      if (label) {
+        const b = document.createElement("b");
+        b.textContent = `${label}: `;
+        p.appendChild(b);
+      }
+      p.appendChild(document.createTextNode(text));
+      return p;
+    }
+
+    function render() {
+      for (const zone of ZONES) {
+        const details = document.createElement("details");
+        details.className = "zone";
+        details.id = `zone-${zone.id}`;
+
+        const summary = document.createElement("summary");
+        const emoji = document.createElement("span");
+        emoji.className = "zone-emoji";
+        emoji.textContent = zone.emoji;
+
+        const name = document.createElement("div");
+        name.className = "zone-name";
+        const title = document.createElement("strong");
+        title.textContent = zone.name;
+        const meter = document.createElement("div");
+        meter.className = "meter";
+        meter.appendChild(document.createElement("div"));
+        name.append(title, meter);
+
+        const count = document.createElement("span");
+        count.className = "zone-count";
+
+        summary.append(emoji, name, count);
+        details.appendChild(summary);
+
+        const tasks = document.createElement("div");
+        tasks.className = "tasks";
+        for (const task of zone.tasks) {
+          const label = document.createElement("label");
+          label.className = "task";
+
+          const box = document.createElement("input");
+          box.type = "checkbox";
+          box.checked = Boolean(state.done[task.id]);
+          box.addEventListener("change", () => onToggle(zone, task, box.checked));
+
+          const body = document.createElement("div");
+          body.className = "task-body";
+          const text = document.createElement("span");
+          text.className = "task-text";
+          text.textContent = task.text;
+          body.appendChild(text);
+          if (task.tip) body.appendChild(tipLine("both", "", task.tip));
+          if (task.ios) body.appendChild(tipLine("ios", "iPhone", task.ios));
+          if (task.android) body.appendChild(tipLine("android", "Android", task.android));
+          if (task.link) {
+            const a = document.createElement("a");
+            a.className = "tip";
+            a.href = task.link.href;
+            a.textContent = task.link.label;
+            a.style.color = "var(--accent)";
+            a.addEventListener("click", (e) => e.stopPropagation());
+            body.appendChild(a);
+          }
+
+          label.append(box, body);
+          tasks.appendChild(label);
+        }
+        details.appendChild(tasks);
+        stage.appendChild(details);
+      }
+      refresh(true);
+    }
+
+    function zoneDoneCount(zone) {
+      return zone.tasks.filter((task) => state.done[task.id]).length;
+    }
+
+    function refresh(initial = false) {
+      let doneTotal = 0;
+      for (const zone of ZONES) {
+        const done = zoneDoneCount(zone);
+        doneTotal += done;
+        const el = document.getElementById(`zone-${zone.id}`);
+        el.querySelector(".zone-count").textContent = `${done} / ${zone.tasks.length}`;
+        el.querySelector(".meter > div").style.width = `${(done / zone.tasks.length) * 100}%`;
+        el.classList.toggle("done", done === zone.tasks.length);
+        if (initial) el.open = done < zone.tasks.length;
+      }
+
+      const percent = Math.round((doneTotal / totalTasks) * 100);
+      overallCount.textContent = `${doneTotal} / ${totalTasks} done`;
+      overallMeter.setAttribute("aria-valuenow", String(percent));
+      overallMeter.firstElementChild.style.width = `${percent}%`;
+      topbarFill.style.width = `${percent}%`;
+      document.body.classList.toggle("all-done", doneTotal === totalTasks);
+    }
+
+    function onToggle(zone, task, checked) {
+      if (checked) state.done[task.id] = true;
+      else delete state.done[task.id];
+      save();
+      refresh();
+
+      if (checked && zoneDoneCount(zone) === zone.tasks.length) {
+        const el = document.getElementById(`zone-${zone.id}`);
+        celebrate(el.querySelector("summary"));
+        setTimeout(() => { el.open = false; }, reducedMotion ? 0 : 700);
+      }
+    }
+
+    function celebrate(anchor) {
+      if (reducedMotion) return;
+      const rect = anchor.getBoundingClientRect();
+      const colors = ["#68d391", "#9ae6b4", "#e7eef4", "#f6e05e"];
+      for (let i = 0; i < 22; i++) {
+        const bit = document.createElement("div");
+        bit.className = "confetti";
+        bit.style.background = colors[i % colors.length];
+        bit.style.left = `${rect.left + Math.random() * rect.width}px`;
+        bit.style.top = `${rect.top + rect.height / 2}px`;
+        document.body.appendChild(bit);
+        bit.animate([
+          { transform: "translate(0, 0) rotate(0deg)", opacity: 1 },
+          {
+            transform: `translate(${(Math.random() - 0.5) * 160}px, ${90 + Math.random() * 130}px) rotate(${(Math.random() - 0.5) * 540}deg)`,
+            opacity: 0
+          }
+        ], { duration: 800 + Math.random() * 500, easing: "cubic-bezier(0.15, 0.6, 0.4, 1)" })
+          .finished.then(() => bit.remove());
+      }
+    }
+
+    function setPlatform(platform) {
+      state.platform = platform;
+      save();
+      document.body.classList.remove("platform-all", "platform-ios", "platform-android");
+      document.body.classList.add(`platform-${platform}`);
+      for (const button of platformButtons) {
+        button.setAttribute("aria-pressed", String(button.dataset.platform === platform));
+      }
+    }
+
+    for (const button of platformButtons) {
+      button.addEventListener("click", () => setPlatform(button.dataset.platform));
+    }
+
+    resetButton.addEventListener("click", () => {
+      if (!confirm("Wipe all progress and start over?")) return;
+      state.done = {};
+      save();
+      for (const box of document.querySelectorAll(".task input")) box.checked = false;
+      for (const zone of document.querySelectorAll(".zone")) zone.open = true;
+      refresh();
+    });
+
+    render();
+    setPlatform(state.platform);
+  </script>
+</body>
+</html>

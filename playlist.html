@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playlist Maker for Apple Music</title>
+<style>
+  :root {
+    --bg: #0b0b0f;
+    --card: #17171f;
+    --card-2: #1f1f2a;
+    --line: #2b2b38;
+    --text: #f2f2f7;
+    --sub: #9a9aa5;
+    --accent: #fa233b;
+    --accent-2: #fb5c74;
+    --ok: #30d158;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 80px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  header h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
+  header p { margin: 2px 0 0; color: var(--sub); font-size: 13px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px; flex: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-size: 22px;
+  }
+  .spacer { flex: 1; }
+  .who { font-size: 12px; color: var(--sub); text-align: right; }
+  .who a { color: var(--sub); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 6px; font-size: 16px; }
+  .card .hint { color: var(--sub); font-size: 13px; margin: 0 0 14px; }
+
+  label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 4px; }
+  input[type="text"], textarea {
+    width: 100%; background: var(--card-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font-size: 15px; font-family: inherit;
+  }
+  textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; min-height: 110px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .btn {
+    appearance: none; border: 0; cursor: pointer; font-family: inherit;
+    border-radius: 12px; padding: 12px 18px; font-size: 15px; font-weight: 600;
+    background: var(--card-2); color: var(--text); border: 1px solid var(--line);
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: 0; color: #fff;
+  }
+  .btn.big { width: 100%; padding: 14px; font-size: 16px; }
+  .btn.small { padding: 7px 12px; font-size: 13px; border-radius: 9px; }
+  .row-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--card-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px;
+  }
+  .chip b { font-weight: 600; }
+  .chip span { color: var(--sub); margin-left: 4px; }
+
+  .modes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .modes label {
+    margin: 0; color: var(--text); font-size: 14px; cursor: pointer;
+    background: var(--card-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 8px 14px;
+  }
+  .modes input { display: none; }
+  .modes label:has(input:checked) {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; font-weight: 600;
+  }
+
+  .sizer { display: flex; align-items: center; gap: 12px; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .sizer output { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 70px; text-align: right; font-size: 14px; }
+
+  ol.tracks { list-style: none; margin: 8px 0 0; padding: 0; }
+  ol.tracks li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 4px; border-bottom: 1px solid var(--line);
+  }
+  ol.tracks li:last-child { border-bottom: 0; }
+  ol.tracks .n { color: var(--sub); font-size: 12px; width: 20px; text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+  ol.tracks img { width: 44px; height: 44px; border-radius: 8px; flex: none; background: var(--card-2); }
+  ol.tracks .meta { flex: 1; min-width: 0; }
+  ol.tracks .meta .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  ol.tracks .meta .a { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  ol.tracks .tag { font-size: 10px; border: 1px solid var(--line); color: var(--sub); border-radius: 6px; padding: 1px 6px; flex: none; }
+  ol.tracks .tag.new { color: var(--accent-2); border-color: var(--accent-2); }
+  ol.tracks button {
+    flex: none; background: none; border: 0; color: var(--sub); cursor: pointer;
+    font-size: 15px; width: 30px; height: 30px; border-radius: 8px;
+  }
+  ol.tracks button:hover { background: var(--card-2); color: var(--text); }
+
+  .banner { border-radius: 12px; padding: 12px 14px; font-size: 14px; margin-bottom: 14px; }
+  .banner.ok { background: rgba(48, 209, 88, 0.12); border: 1px solid rgba(48, 209, 88, 0.4); }
+  .banner.ok a { color: var(--ok); font-weight: 600; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #2a1418; color: #ffb3bd; border: 1px solid #5c2430;
+    padding: 10px 16px; border-radius: 12px; font-size: 14px;
+    max-width: min(560px, calc(100vw - 32px)); text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  #toast.show { opacity: 1; }
+
+  details { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+  details summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+  details p, details li { font-size: 13px; color: var(--sub); }
+  details a { color: var(--accent-2); }
+  code { background: var(--card-2); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+
+  .muted-link { background: none; border: 0; color: var(--sub); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
+  .status { font-size: 13px; color: var(--sub); }
+  .spin::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 8px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: spin 0.8s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">🎧</div>
+    <div>
+      <h1>Playlist Maker</h1>
+      <p>fresh playlists from what you've actually been playing</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="who" id="who"></div>
+  </header>
+
+  <!-- ============ SCREEN 1: one-time Apple key setup ============ -->
+  <section id="screen-setup" class="card hidden">
+    <h2>One-time setup</h2>
+    <p class="hint">
+      Apple only lets software read your listening history through its official API, and the API
+      requires a (sadly, paid) Apple Developer key to sign requests. Paste yours below — it's saved in
+      <b>this browser only</b> and is never sent anywhere except used locally to sign requests to Apple.
+    </p>
+
+    <label for="in-team">Team ID <span style="color:var(--sub)">(developer.apple.com → Membership)</span></label>
+    <input type="text" id="in-team" placeholder="e.g. 5A2B3C4D5E" autocomplete="off" spellcheck="false">
+
+    <label for="in-kid">Key ID <span style="color:var(--sub)">(shown when you create the key)</span></label>
+    <input type="text" id="in-kid" placeholder="e.g. ABC123DEFG" autocomplete="off" spellcheck="false">
+
+    <label for="in-p8">Private key — paste the contents of your <code>AuthKey_XXXXXXXXXX.p8</code> file, or pick it:</label>
+    <input type="file" id="in-p8-file" accept=".p8,.pem,.txt" style="margin: 4px 0 8px; font-size: 13px; color: var(--sub);">
+    <textarea id="in-p8" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----" spellcheck="false"></textarea>
+
+    <div class="row-actions">
+      <button class="btn primary big" id="btn-save-setup">Save &amp; continue</button>
+    </div>
+    <div class="row-actions" id="forget-row" style="justify-content:center">
+      <button class="muted-link" id="btn-forget">Forget saved key on this browser</button>
+    </div>
+
+    <details>
+      <summary>How to get these (≈5 min, needs Apple Developer Program — $99/yr)</summary>
+      <ol style="padding-left: 18px;">
+        <li>Join the <a href="https://developer.apple.com/programs/" target="_blank" rel="noopener">Apple Developer Program</a> with your Apple ID.</li>
+        <li>Go to <a href="https://developer.apple.com/account/resources/authkeys/list" target="_blank" rel="noopener">Certificates, Identifiers &amp; Profiles → Keys</a>, create a key, and enable <b>MusicKit / Media Services</b> on it.</li>
+        <li>Download the <code>.p8</code> file (Apple only lets you download it once — keep it safe) and note the <b>Key ID</b>.</li>
+        <li>Your <b>Team ID</b> is on the <a href="https://developer.apple.com/account#MembershipDetailsCard" target="_blank" rel="noopener">Membership</a> page.</li>
+      </ol>
+    </details>
+
+    <details>
+      <summary>Don't want to pay Apple? Free ways to get (almost) the same thing</summary>
+      <p>Apple actually does build playlists from your listening — the features are just weirdly buried:</p>
+      <ul style="padding-left: 18px;">
+        <li><b>Flip the switch that gates all of it:</b> iPhone → Settings → Music → <b>Use Listening History</b> must be ON.</li>
+        <li><b>Made For You mixes:</b> Music app → <b>Home</b> tab → scroll to the "Made For You" section: Favorites Mix, New Music Mix, Chill Mix, Get Up! Mix, Heavy Rotation. They regenerate weekly from your listening.</li>
+        <li><b>Discovery Station:</b> search "Discovery Station" in the Music app — endless personalized radio made only of songs you <i>haven't</i> played. There's also "<i>Your-name</i>'s Station" for the familiar version.</li>
+        <li><b>Shortcuts recipe (iPhone, free):</b> Shortcuts app → new shortcut → add <b>Find Music</b> (filter: Last Played is in the last 30 days, sort by Play Count, limit 25) → add <b>Add to Playlist</b>. Run it any time for an instant "on repeat" playlist from your library.</li>
+        <li><b>Mac Smart Playlist:</b> Music app on a Mac → File → New → Smart Playlist → rules like "Last Played in the last 30 days, sorted by plays, limit 25". It updates itself forever and syncs to your phone.</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- ============ SCREEN 2: connect ============ -->
+  <section id="screen-connect" class="card hidden">
+    <h2>Connect your Apple Music</h2>
+    <p class="hint">
+      This asks Apple for permission to see your listening history and create playlists in your
+      library. You'll need an active Apple Music subscription, and your browser needs to allow the
+      sign-in pop-up.
+    </p>
+    <button class="btn primary big" id="btn-connect">Connect Apple Music</button>
+    <div class="row-actions" style="justify-content:center">
+      <button class="muted-link" id="btn-edit-setup">Edit developer key</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3: the actual app ============ -->
+  <section id="screen-main" class="hidden">
+
+    <div class="card" id="vibe-card">
+      <h2>Your recent vibe</h2>
+      <p class="status" id="vibe-status"><span class="spin"></span>Reading your recent plays…</p>
+      <div class="chips hidden" id="artist-chips"></div>
+      <div id="empty-history" class="hidden">
+        <p class="hint" style="margin-top:10px">
+          Apple returned no recent listening for this account. Two usual causes:
+        </p>
+        <ul style="font-size:13px; color:var(--sub); padding-left:18px; margin-top:0">
+          <li>iPhone → Settings → Music → <b>Use Listening History</b> is switched off — turn it on, play some music, come back.</li>
+          <li>You signed into a different Apple ID than the one you listen on.</li>
+        </ul>
+        <button class="btn small" id="btn-retry-history">Check again</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="controls-card">
+      <h2>Build the playlist</h2>
+
+      <label style="margin-top:4px">Flavor</label>
+      <div class="modes">
+        <label><input type="radio" name="mode" value="comfort">On repeat</label>
+        <label><input type="radio" name="mode" value="mix" checked>Best of both</label>
+        <label><input type="radio" name="mode" value="new">New to me</label>
+      </div>
+      <p class="hint" style="margin:8px 0 0" id="mode-hint"></p>
+
+      <label>How many songs</label>
+      <div class="sizer">
+        <input type="range" id="in-size" min="10" max="50" step="5" value="25">
+        <output id="out-size">25 songs</output>
+      </div>
+
+      <label for="in-name">Playlist name</label>
+      <input type="text" id="in-name" autocomplete="off">
+
+      <div class="row-actions">
+        <button class="btn primary big" id="btn-generate">Generate playlist</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="preview-card">
+      <div id="save-banner" class="banner ok hidden"></div>
+      <h2 id="preview-title">Preview</h2>
+      <p class="hint">Tap ▶ for a 30-second taste, ✕ to kick a song out, or regenerate for a different draw.</p>
+      <ol class="tracks" id="track-list"></ol>
+      <div class="row-actions">
+        <button class="btn primary big" id="btn-save" style="flex:2">Save to Apple Music</button>
+        <button class="btn big" id="btn-regen" style="flex:1">↻ Regenerate</button>
+      </div>
+    </div>
+
+    <div class="row-actions" style="justify-content:center">
+      <button class="muted-link" id="btn-disconnect">Disconnect Apple Music</button>
+      <button class="muted-link" id="btn-edit-setup-2">Edit developer key</button>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------- helpers */
+
+const $ = (id) => document.getElementById(id);
+const show = (el) => el.classList.remove("hidden");
+const hide = (el) => el.classList.add("hidden");
+
+function toast(msg, ms = 5000) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function artUrl(artwork, size) {
+  if (!artwork || !artwork.url) return "";
+  return artwork.url.replace("{w}", size).replace("{h}", size);
+}
+
+// "Song (feat. X) [2011 Remaster]" and "Song" should count as the same song
+function dupeKey(name, artist) {
+  const clean = (name || "").toLowerCase().replace(/\s*[\(\[].*?[\)\]]/g, "").replace(/\s+/g, " ").trim();
+  return clean + "|" + (artist || "").toLowerCase().trim();
+}
+
+const b64url = (bytes) =>
+  btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const utf8 = (str) => new TextEncoder().encode(str);
+
+/* ------------------------------------------- developer token (all local) */
+
+const LS = { team: "ampm.teamId", kid: "ampm.keyId", p8: "ampm.p8" };
+
+function loadCreds() {
+  return {
+    team: (localStorage.getItem(LS.team) || "").trim(),
+    kid: (localStorage.getItem(LS.kid) || "").trim(),
+    p8: localStorage.getItem(LS.p8) || "",
+  };
+}
+
+function pemToDer(pem) {
+  const body = pem.replace(/-----(BEGIN|END)[^-]+-----/g, "").replace(/\s+/g, "");
+  const bin = atob(body);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+// Signs a MusicKit developer token (ES256 JWT) with WebCrypto. Nothing leaves the browser.
+async function makeDevToken({ team, kid, p8 }) {
+  const key = await crypto.subtle.importKey(
+    "pkcs8", pemToDer(p8), { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "ES256", kid, typ: "JWT" };
+  const payload = { iss: team, iat: now, exp: now + 60 * 60 * 24 * 180 };
+  const input = b64url(utf8(JSON.stringify(header))) + "." + b64url(utf8(JSON.stringify(payload)));
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, utf8(input));
+  return input + "." + b64url(new Uint8Array(sig));
+}
+
+/* --------------------------------------------------------------- MusicKit */
+
+let music = null;      // MusicKit instance
+let devToken = null;
+
+function whenMusicKitLoads() {
+  return new Promise((resolve, reject) => {
+    if (window.MusicKit) return resolve();
+    document.addEventListener("musickitloaded", () => resolve(), { once: true });
+    const iv = setInterval(() => { if (window.MusicKit) { clearInterval(iv); resolve(); } }, 250);
+    setTimeout(() => {
+      clearInterval(iv);
+      if (!window.MusicKit) reject(new Error("MusicKit script didn't load — check your connection or ad blocker."));
+    }, 12000);
+  });
+}
+
+async function api(path, params) {
+  const res = await music.api.music(path, params);
+  return res.data; // parsed Apple Music API JSON body
+}
+
+/* ------------------------------------------------------------ app state */
+
+let historySongs = [];   // [{id, name, artistName, artwork, preview, plays, rank}]
+let artistTally = [];    // [{id, name, plays}] most-played first
+let discoveryPool = null; // lazily built [{id, name, artistName, artwork, preview}]
+let currentList = [];    // what's in the preview
+let nameTouched = false;
+
+const MODE_HINTS = {
+  comfort: "Only songs you've been playing — your on-repeat, in one place.",
+  mix: "About half your recent favorites, half new songs in the same lane.",
+  new: "Almost all new-to-you songs, picked from artists similar to your recent plays.",
+};
+
+/* ------------------------------------------------------------- screens */
+
+function showScreen(name) {
+  for (const s of ["screen-setup", "screen-connect", "screen-main"]) hide($(s));
+  show($(name));
+}
+
+function defaultName() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const label = { comfort: "On Repeat", mix: "Best of Both", new: "New to Me" }[mode];
+  const d = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${label} · ${d}`;
+}
+
+/* ------------------------------------------------------------ boot flow */
+
+async function boot() {
+  const creds = loadCreds();
+  $("in-team").value = creds.team;
+  $("in-kid").value = creds.kid;
+  $("in-p8").value = creds.p8;
+  if (!creds.team || !creds.kid || !creds.p8) { showScreen("screen-setup"); return; }
+
+  try {
+    devToken = await makeDevToken(creds);
+  } catch (e) {
+    showScreen("screen-setup");
+    toast("Couldn't use the saved key — it doesn't look like a valid .p8. Re-paste it?");
+    return;
+  }
+
+  try {
+    await whenMusicKitLoads();
+    await MusicKit.configure({
+      developerToken: devToken,
+      app: { name: "Playlist Maker", build: "1.0.0" },
+    });
+    music = MusicKit.getInstance();
+  } catch (e) {
+    showScreen("screen-setup");
+    toast("Apple rejected the developer token — double-check Team ID, Key ID, and that the key has MusicKit enabled.");
+    return;
+  }
+
+  if (music.isAuthorized) enterMain();
+  else showScreen("screen-connect");
+}
+
+async function connect() {
+  const btn = $("btn-connect");
+  btn.disabled = true;
+  try {
+    await music.authorize();
+    enterMain();
+  } catch (e) {
+    toast("Couldn't connect. You need an active Apple Music subscription, and the sign-in pop-up must be allowed.");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function enterMain() {
+  showScreen("screen-main");
+  $("who").innerHTML = "connected ✓";
+  analyze();
+}
+
+/* -------------------------------------------------- step 1: read history */
+
+async function fetchRecentPlays() {
+  const rows = [];
+  let path = "/v1/me/recent/played/tracks";
+  let params = { limit: 30 };
+  for (let page = 0; page < 4; page++) {
+    const body = await api(path, params);
+    rows.push(...(body.data || []));
+    if (!body.next) break;
+    path = body.next; params = undefined;
+  }
+  return rows;
+}
+
+function normalizePlay(row) {
+  // Rows can be catalog songs or library songs; we need the catalog id to work with.
+  let id = null;
+  if (row.type === "songs") id = row.id;
+  else if (row.attributes && row.attributes.playParams) id = row.attributes.playParams.catalogId;
+  if (!id || !row.attributes) return null;
+  return {
+    id: String(id),
+    name: row.attributes.name,
+    artistName: row.attributes.artistName || "",
+    artwork: row.attributes.artwork,
+    preview: row.attributes.previews && row.attributes.previews[0] ? row.attributes.previews[0].url : null,
+  };
+}
+
+// Resolve catalog artist ids for the songs we've been playing (needed for "similar artists")
+async function resolveArtistIds(songIds) {
+  const map = new Map(); // songId -> {artistId, artistName}
+  for (let i = 0; i < songIds.length; i += 100) {
+    const chunk = songIds.slice(i, i + 100);
+    try {
+      const body = await api("/v1/catalog/{{storefrontId}}/songs", { ids: chunk.join(","), include: "artists" });
+      for (const song of body.data || []) {
+        const rel = song.relationships && song.relationships.artists && song.relationships.artists.data;
+        if (rel && rel[0]) {
+          map.set(String(song.id), {
+            artistId: String(rel[0].id),
+            artistName: (rel[0].attributes && rel[0].attributes.name) || (song.attributes && song.attributes.artistName) || "",
+          });
+        }
+      }
+    } catch (e) { /* non-fatal: we just lose "similar artist" seeds for this chunk */ }
+  }
+  return map;
+}
+
+async function analyze() {
+  const status = $("vibe-status");
+  show(status); hide($("artist-chips")); hide($("empty-history")); hide($("controls-card"));
+  status.innerHTML = '<span class="spin"></span>Reading your recent plays…';
+  historySongs = []; artistTally = []; discoveryPool = null;
+
+  let rows;
+  try {
+    rows = await fetchRecentPlays();
+  } catch (e) {
+    status.textContent = "Couldn't read your listening history.";
+    toast("Apple refused the history request — try disconnecting and reconnecting.");
+    return;
+  }
+
+  // Tally plays per unique song, keeping first-seen order (Apple returns newest first)
+  const byId = new Map();
+  let rank = 0;
+  for (const row of rows) {
+    const s = normalizePlay(row);
+    if (!s) continue;
+    const existing = byId.get(s.id);
+    if (existing) existing.plays++;
+    else byId.set(s.id, Object.assign(s, { plays: 1, rank: rank++ }));
+  }
+  historySongs = [...byId.values()];
+
+  if (historySongs.length === 0) {
+    hide(status); show($("empty-history"));
+    return;
+  }
+
+  status.innerHTML = '<span class="spin"></span>Working out your top artists…';
+  const artistMap = await resolveArtistIds(historySongs.map((s) => s.id));
+
+  const tally = new Map(); // artistKey -> {id, name, plays}
+  for (const s of historySongs) {
+    const info = artistMap.get(s.id);
+    const key = info ? info.artistId : "name:" + s.artistName.toLowerCase();
+    const entry = tally.get(key) || { id: info ? info.artistId : null, name: info ? info.artistName : s.artistName, plays: 0 };
+    entry.plays += s.plays;
+    tally.set(key, entry);
+  }
+  artistTally = [...tally.values()].sort((a, b) => b.plays - a.plays);
+
+  hide(status);
+  const chips = $("artist-chips");
+  chips.innerHTML = "";
+  const total = historySongs.reduce((n, s) => n + s.plays, 0);
+  for (const a of artistTally.slice(0, 8)) {
+    const el = document.createElement("div");
+    el.className = "chip";
+    el.innerHTML = `<b></b><span>×${a.plays}</span>`;
+    el.querySelector("b").textContent = a.name;
+    chips.appendChild(el);
+  }
+  const sum = document.createElement("div");
+  sum.className = "chip";
+  sum.innerHTML = `<span>from your last ${total} plays</span>`;
+  chips.appendChild(sum);
+  show(chips);
+  show($("controls-card"));
+  if (!nameTouched) $("in-name").value = defaultName();
+}
+
+/* ---------------------------------------------- step 2: find new music */
+
+async function buildDiscoveryPool() {
+  const excludeIds = new Set(historySongs.map((s) => s.id));
+  const knownArtists = new Set(artistTally.map((a) => a.name.toLowerCase()));
+  const seeds = artistTally.filter((a) => a.id).slice(0, 6);
+
+  // seed artists -> similar artists
+  const similar = new Map(); // id -> name
+  for (const seed of seeds) {
+    try {
+      const body = await api(`/v1/catalog/{{storefrontId}}/artists/${seed.id}/view/similar-artists`, { limit: 15 });
+      for (const a of body.data || []) {
+        const nm = a.attributes && a.attributes.name;
+        if (!nm || knownArtists.has(nm.toLowerCase())) continue;
+        similar.set(String(a.id), nm);
+      }
+    } catch (e) { /* some artists have no similar-artists view; fine */ }
+  }
+
+  // similar artists -> their top songs
+  const pool = [];
+  const seen = new Set(historySongs.map((s) => dupeKey(s.name, s.artistName)));
+  const picks = shuffle([...similar.keys()]).slice(0, 14);
+  for (const artistId of picks) {
+    try {
+      const body = await api(`/v1/catalog/{{storefrontId}}/artists/${artistId}/view/top-songs`, { limit: 10 });
+      for (const song of body.data || []) {
+        const at = song.attributes;
+        if (!at || !at.playParams) continue;               // not streamable
+        if (excludeIds.has(String(song.id))) continue;      // already been playing it
+        const key = dupeKey(at.name, at.artistName);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pool.push({
+          id: String(song.id),
+          name: at.name,
+          artistName: at.artistName || similar.get(artistId) || "",
+          artwork: at.artwork,
+          preview: at.previews && at.previews[0] ? at.previews[0].url : null,
+          fresh: true,
+        });
+      }
+    } catch (e) { /* skip artist */ }
+  }
+  return shuffle(pool);
+}
+
+/* ------------------------------------------------ step 3: assemble list */
+
+function spreadArtists(list) {
+  // one gentle pass so the same artist doesn't play back-to-back
+  for (let i = 1; i < list.length; i++) {
+    if (list[i].artistName === list[i - 1].artistName) {
+      for (let j = i + 1; j < list.length; j++) {
+        if (list[j].artistName !== list[i - 1].artistName) {
+          [list[i], list[j]] = [list[j], list[i]];
+          break;
+        }
+      }
+    }
+  }
+  return list;
+}
+
+async function generate() {
+  const btn = $("btn-generate");
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const size = parseInt($("in-size").value, 10);
+  btn.disabled = true;
+
+  try {
+    if (mode !== "comfort" && discoveryPool === null) {
+      btn.innerHTML = '<span class="spin"></span>Digging for new songs…';
+      discoveryPool = await buildDiscoveryPool();
+      if (discoveryPool.length === 0 && mode === "new") {
+        toast("Couldn't find enough new songs from similar artists — falling back to a mixed list.");
+      }
+    }
+
+    const familiarShare = { comfort: 1, mix: 0.5, new: 0.15 }[mode];
+    const favorites = [...historySongs].sort((a, b) => b.plays - a.plays || a.rank - b.rank);
+    const fresh = discoveryPool ? shuffle([...discoveryPool]) : [];
+
+    let nFam = Math.round(size * familiarShare);
+    let nNew = size - nFam;
+    if (fresh.length < nNew) { nFam += nNew - fresh.length; nNew = fresh.length; }
+    if (favorites.length < nFam) { nNew = Math.min(fresh.length, size - favorites.length); nFam = favorites.length; }
+
+    const picked = shuffle([...favorites.slice(0, nFam), ...fresh.slice(0, nNew)]);
+    currentList = spreadArtists(picked).slice(0, size);
+
+    if (currentList.length === 0) { toast("Nothing to build a playlist from yet."); return; }
+    if (!nameTouched) $("in-name").value = defaultName();
+    renderPreview();
+  } catch (e) {
+    toast("Something went wrong while generating — try again in a moment.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Generate playlist";
+  }
+}
+
+/* --------------------------------------------------------- preview + save */
+
+const audio = new Audio();
+let playingRow = null;
+
+function stopPreview() {
+  audio.pause();
+  if (playingRow) { playingRow.textContent = "▶"; playingRow = null; }
+}
+
+function renderPreview() {
+  hide($("save-banner"));
+  const ol = $("track-list");
+  ol.innerHTML = "";
+  currentList.forEach((song, i) => {
+    const li = document.createElement("li");
+
+    const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
+    const img = document.createElement("img"); img.loading = "lazy"; img.alt = "";
+    img.src = artUrl(song.artwork, 88);
+    const meta = document.createElement("div"); meta.className = "meta";
+    const t = document.createElement("div"); t.className = "t"; t.textContent = song.name;
+    const a = document.createElement("div"); a.className = "a"; a.textContent = song.artistName;
+    meta.append(t, a);
+    li.append(n, img, meta);
+
+    if (song.fresh) {
+      const tag = document.createElement("span"); tag.className = "tag new"; tag.textContent = "new";
+      li.appendChild(tag);
+    }
+
+    if (song.preview) {
+      const play = document.createElement("button"); play.textContent = "▶"; play.title = "30-second preview";
+      play.addEventListener("click", () => {
+        if (playingRow === play) { stopPreview(); return; }
+        stopPreview();
+        audio.src = song.preview;
+        audio.play().catch(() => {});
+        play.textContent = "⏸"; playingRow = play;
+      });
+      li.appendChild(play);
+    }
+
+    const del = document.createElement("button"); del.textContent = "✕"; del.title = "Remove";
+    del.addEventListener("click", () => {
+      currentList = currentList.filter((s) => s !== song);
+      renderPreview();
+    });
+    li.appendChild(del);
+
+    ol.appendChild(li);
+  });
+  $("preview-title").textContent = `Preview · ${currentList.length} songs`;
+  show($("preview-card"));
+  $("preview-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function savePlaylist() {
+  if (currentList.length === 0) { toast("The list is empty."); return; }
+  const btn = $("btn-save");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Saving…';
+  stopPreview();
+
+  const name = $("in-name").value.trim() || defaultName();
+  const body = {
+    attributes: {
+      name,
+      description: "Made from my recent listening with Playlist Maker on " +
+        new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
+    },
+    relationships: {
+      tracks: { data: currentList.map((s) => ({ id: s.id, type: "songs" })) },
+    },
+  };
+
+  try {
+    const res = await fetch("https://api.music.apple.com/v1/me/library/playlists", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + devToken,
+        "Music-User-Token": music.musicUserToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    let link = "";
+    try {
+      const json = await res.json();
+      const id = json.data && json.data[0] && json.data[0].id;
+      if (id) link = ` <a href="https://music.apple.com/library/playlist/${id}" target="_blank" rel="noopener">Open on the web ↗</a>`;
+    } catch (e) { /* body is optional */ }
+    const banner = $("save-banner");
+    banner.innerHTML = `Saved! “${name.replace(/</g, "&lt;")}” (${currentList.length} songs) is now in your Apple Music library — ` +
+      `it can take a few seconds to show up on your phone under Library → Playlists.` + link;
+    show(banner);
+    banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (e) {
+    toast("Apple wouldn't save the playlist (" + e.message + "). Try reconnecting and saving again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save to Apple Music";
+  }
+}
+
+/* ---------------------------------------------------------------- wiring */
+
+$("btn-save-setup").addEventListener("click", async () => {
+  const team = $("in-team").value.trim();
+  const kid = $("in-kid").value.trim();
+  const p8 = $("in-p8").value.trim();
+  if (!team || !kid || !p8) { toast("All three fields are needed."); return; }
+  if (!p8.includes("PRIVATE KEY")) { toast("The key should be the whole .p8 file, including the BEGIN/END PRIVATE KEY lines."); return; }
+  try {
+    await makeDevToken({ team, kid, p8 });
+  } catch (e) {
+    toast("That key can't be read as a .p8 private key — check you pasted the full file.");
+    return;
+  }
+  localStorage.setItem(LS.team, team);
+  localStorage.setItem(LS.kid, kid);
+  localStorage.setItem(LS.p8, p8);
+  boot();
+});
+
+$("in-p8-file").addEventListener("change", (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  file.text().then((txt) => { $("in-p8").value = txt.trim(); });
+});
+
+$("btn-forget").addEventListener("click", () => {
+  for (const k of Object.values(LS)) localStorage.removeItem(k);
+  $("in-team").value = $("in-kid").value = $("in-p8").value = "";
+  toast("Key forgotten on this browser.", 3000);
+});
+
+$("btn-connect").addEventListener("click", connect);
+$("btn-retry-history").addEventListener("click", analyze);
+$("btn-generate").addEventListener("click", generate);
+$("btn-regen").addEventListener("click", generate);
+$("btn-save").addEventListener("click", savePlaylist);
+
+for (const el of ["btn-edit-setup", "btn-edit-setup-2"]) {
+  $(el).addEventListener("click", () => showScreen("screen-setup"));
+}
+
+$("btn-disconnect").addEventListener("click", async () => {
+  stopPreview();
+  try { await music.unauthorize(); } catch (e) {}
+  showScreen("screen-connect");
+  $("who").textContent = "";
+});
+
+$("in-size").addEventListener("input", () => { $("out-size").textContent = $("in-size").value + " songs"; });
+$("in-name").addEventListener("input", () => { nameTouched = true; });
+
+const modeHint = () => { $("mode-hint").textContent = MODE_HINTS[document.querySelector('input[name="mode"]:checked').value]; };
+for (const r of document.querySelectorAll('input[name="mode"]')) {
+  r.addEventListener("change", () => { modeHint(); if (!nameTouched) $("in-name").value = defaultName(); });
+}
+modeHint();
+
+boot();
+</script>
+</body>
+</html>

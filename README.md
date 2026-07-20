@@ -32,11 +32,10 @@ python3 -m http.server 8000
 - Picks the camera via a dropdown — handy on machines with multiple cameras.
 - Detected text lands in a copy-friendly input field.
 
-## Also in here: phone organization tools
+## Also in here: other little tools
 
-Same deal as the scanner — each is one HTML file, no backend, no build step,
-works from `file://`. All progress/plans save in the browser and never leave
-your device.
+Same deal as the scanner — each is one HTML file, no backend, no build step.
+All progress/plans save in the browser and never leave your device.
 
 ### Phone Declutter
 
@@ -58,6 +57,34 @@ phone match — iOS/Android don't let outside software move icons, so the last
 step is yours.
 
 Live: <https://sagedeutschle.github.io/qr-scanner/homescreen.html>
+
+### Playlist Maker for Apple Music
+
+[`playlist.html`](./playlist.html) — reads what you've actually been playing on
+Apple Music lately, shows your top artists, and builds a playlist straight into
+your library. Three flavors: **On repeat** (your recent favorites), **Best of
+both** (half favorites, half new songs from similar artists), or **New to me**
+(almost all songs you haven't heard). Preview 30-second clips, kick out songs
+you don't want, then save — it appears in Library → Playlists on your phone.
+
+Live: <https://sagedeutschle.github.io/qr-scanner/playlist.html>
+
+Two honest caveats, because Apple gates its API:
+
+- You need an **active Apple Music subscription** and, one time, an
+  **Apple Developer Program key** ($99/yr — sorry, Apple's rule, there is no
+  free API access). The page walks you through getting one. The key is stored
+  in your browser only and is used locally to sign requests to Apple — this
+  stays a no-backend app; nothing goes anywhere except directly to Apple.
+- Open it from the live GitHub Pages link or `localhost` (see the scanner
+  instructions above) — Apple's sign-in pop-up needs a real `https://` or
+  `localhost` origin, so plain `file://` won't work for this one.
+
+Don't want to pay Apple $99? The setup screen also lists the **free**
+built-in ways to get nearly the same thing (Made For You mixes, Discovery
+Station, a Shortcuts recipe, Mac smart playlists) — the short version is:
+Settings → Music → **Use Listening History** must be ON, then check the
+Home tab of the Music app.
 
 ## License
 

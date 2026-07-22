@@ -12,6 +12,7 @@ steps, ready-to-paste text, and the media files in this folder.
 
 | File | What it's for |
 | --- | --- |
+| `linkedin-banner.png` | Your LinkedIn profile background banner (1584×396) |
 | `screenshots/desktop.png` | Hero image — the app decoding a QR code on desktop |
 | `screenshots/mobile.png` | The app on a phone-sized screen |
 | `social-preview.png` | Card GitHub shows when the repo is linked anywhere |
@@ -32,6 +33,13 @@ you wherever they're re-shared.
    LinkedIn link land on your best work first.
 
 ## LinkedIn, step by step
+
+### 0. Set your profile banner
+
+Profile → hover the background area → **camera / edit icon** at the top-right of
+the banner → **Add photo** → upload `linkedin-banner.png`. It's already sized to
+LinkedIn's 1584×396 spec, with all text kept clear of where your profile photo
+sits, so nothing important gets covered.
 
 ### 1. Put GitHub in your contact info
 
